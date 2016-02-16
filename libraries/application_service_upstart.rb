@@ -1,9 +1,11 @@
+require_relative 'application_service_resource'
+
 class Chef
   class Provider
     class ApplicationServiceUpstart < ApplicationService
       if defined?(provides) # foodcritic ~FC023
         provides :application_service, os: 'linux' do |node|
-           Chef::Sugar::Init.upstart?(node)
+          Chef::Resource::ApplicationService.upstart?
         end
 
         action :create do

@@ -1,11 +1,9 @@
 require 'chef/resource/lwrp_base'
-require 'chef/sugar'
 
 class Chef
   class Resource
     class ApplicationService < Chef::Resource::LWRPBase
 
-      include Chef::Sugar::Init
 
       self.resource_name = :application_service
       provides :application_service
@@ -21,13 +19,22 @@ class Chef
       attribute :stop, kind_of: String
       attribute :environment, kind_of: Hash, default: {}
 
+      def self.systemd?
+        Chef::Platform::ServiceHelpers.service_resource_providers.include?(:systemd)
+      end
+
+      def self.upstart?
+        Chef::Platform::ServiceHelpers.service_resource_providers.include?(:upstart) &&
+          !Chef::Platform::ServiceHelpers.service_resource_providers.include?(:redhat)
+      end
+
       # start_on upstart
       # after systemd
       attribute :start_condition, kind_of: String,
         default: lazy { |resource|
-        if resource.upstart?(resource.node)
+        if resource.class.upstart?
           'runlevel [2345]'
-        elsif resource.systemd?(resource.node)
+        elsif resource.class.systemd?
           'network.target remote-fs.target'
         end
       }
@@ -36,7 +43,7 @@ class Chef
       # after systemd
       attribute :stop_condition, kind_of: String,
         default: lazy { |resource|
-        if resource.upstart?(resource.node)
+        if resource.class.upstart?
           "runlevel [!2345]"
         end
       }
@@ -45,9 +52,9 @@ class Chef
       # restart systemd
       attribute :respawn, kind_of: [TrueClass, FalseClass, String],
         default: lazy { |resource|
-        if resource.upstart?(resource.node)
+        if resource.class.upstart?
           true
-        elsif resource.systemd?(resource.node)
+        elsif resource.class.systemd?
           'on-failure'
         end
       }

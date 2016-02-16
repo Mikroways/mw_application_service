@@ -1,4 +1,5 @@
 require 'chef/provider/lwrp_base'
+
 class Chef
   class Provider
     class ApplicationService < Chef::Provider::LWRPBase
